@@ -5,38 +5,53 @@
     <title>TL ENGINEERING</title>
     <style>
         :root { --bg: #0f172a; --card: #1e293b; --accent: #ff6600; --text: #f8fafc; }
+        
+        /* ปรับแต่ง Scrollbar ให้ดูสวยงาม (สำหรับ Browser ที่รองรับ) */
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--card); border-radius: 10px; border: 2px solid var(--accent); }
+
         body { 
             background: var(--bg); color: var(--text); font-family: 'Sarabun', sans-serif; 
-            margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; 
+            margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; 
         }
+
         #header { 
             background: var(--bg); text-align: center; padding: 15px 0; 
-            border-bottom: 3px solid var(--accent); z-index: 100; flex-shrink: 0; 
+            border-bottom: 3px solid var(--accent); z-index: 1000; flex-shrink: 0;
+            position: sticky; top: 0;
         }
+
         #logo { max-height: 90px; width: auto; }
+
+        /* ส่วนแสดงข้อความที่เลื่อนดูได้ */
         #wall-container {
-            flex-grow: 1; overflow-y: hidden; padding: 20px;
-            display: flex; flex-direction: column-reverse; gap: 20px;
+            flex-grow: 1; 
+            overflow-y: auto; /* เปิดให้ Scroll ได้ */
+            padding: 20px;
+            display: flex;
+            flex-direction: column; /* เรียงจากบนลงล่างตามปกติ */
+            gap: 20px;
+            scroll-behavior: smooth;
         }
+
         .card { 
             background: var(--card); padding: 25px; border-radius: 20px; 
             border-left: 12px solid var(--accent); box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             animation: slideIn 0.5s ease-out; flex-shrink: 0;
         }
+
         .user { color: var(--accent); font-size: 1.8rem; font-weight: bold; margin-bottom: 10px; }
         .text { font-size: 2.2rem; line-height: 1.3; margin-bottom: 10px; }
-        
-        /* ปรับส่วนรูปภาพให้ใหญ่ขึ้น */
         .media { 
-            width: 100%; 
-            max-height: 500px; /* เพิ่มความสูงสูงสุดจาก 300px เป็น 500px */
-            object-fit: contain; 
-            border-radius: 12px; 
-            margin-top: 15px;
-            background: #000; /* ใส่พื้นหลังดำให้รูปดูเด่นขึ้น */
+            width: 100%; max-height: 550px; object-fit: contain; 
+            border-radius: 12px; margin-top: 15px; background: #000; 
         }
-        
-        @keyframes slideIn { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+
+        @keyframes slideIn { 
+            from { opacity: 0; transform: translateX(-30px); } 
+            to { opacity: 1; transform: translateX(0); } 
+        }
     </style>
 </head>
 <body>
@@ -59,6 +74,7 @@
                 const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${lastUpdateId + 1}&timeout=30`);
                 const data = await response.json();
                 if (data.ok && data.result.length > 0) {
+                    // เรียงจากเก่าไปใหม่เพื่อให้ข้อความใหม่ไปอยู่บนสุด
                     for (let update of data.result) {
                         lastUpdateId = update.update_id;
                         if (update.message && update.message.chat.id == TARGET_CHAT_ID) {
@@ -66,7 +82,7 @@
                             if (!displayedMessageIds.has(msgId)) {
                                 displayedMessageIds.add(msgId);
                                 processMessage(update.message);
-                                if (displayedMessageIds.size > 100) {
+                                if (displayedMessageIds.size > 200) { // เพิ่มการจำ ID เป็น 200
                                     const firstItem = displayedMessageIds.values().next().value;
                                     displayedMessageIds.delete(firstItem);
                                 }
@@ -89,7 +105,6 @@
                 content += `<div class="text">📍 แชร์ตำแหน่งที่ตั้ง</div><img src="${mapUrl}" class="media">`;
             } 
             else if (msg.photo) {
-                // เลือกรูปที่ใหญ่ที่สุดจาก Array
                 const fileId = msg.photo[msg.photo.length - 1].file_id;
                 const fileRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getFile?file_id=${fileId}`);
                 const fileData = await fileRes.json();
@@ -102,10 +117,14 @@
             }
 
             card.innerHTML = content;
+            
+            // ใช้ prepend เพื่อให้ข้อความใหม่ล่าสุดอยู่ "บนสุด" เสมอ
             wall.prepend(card);
 
-            // ปรับจำนวนข้อความบนจอเหลือ 3 ข้อความ เพื่อให้รูปมีที่วางกว้างขึ้น
-            if (wall.children.length > 3) wall.removeChild(wall.lastChild);
+            // เมื่อมีข้อความใหม่เข้ามา ให้หน้าจอเลื่อนไปบนสุดอัตโนมัติ (ถ้าไม่ได้กำลังเลื่อนดูของเก่าอยู่)
+            if (wall.scrollTop < 100) {
+                wall.scrollTo({ top: 0, behavior: 'smooth' });
+            }
         }
 
         fetchTelegram(); 
@@ -113,6 +132,6 @@
     </script>
 </body>
 </html>
-</html>
+
 
 

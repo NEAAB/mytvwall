@@ -2,36 +2,32 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>TL ENGINEERING</title>
+    <title>TL Live Chat Wall - Auto Scroll</title>
     <style>
         :root { --bg: #0f172a; --card: #1e293b; --accent: #ff6600; --text: #f8fafc; }
         
-        /* ปรับแต่ง Scrollbar ให้ดูสวยงาม (สำหรับ Browser ที่รองรับ) */
-        ::-webkit-scrollbar { width: 10px; }
-        ::-webkit-scrollbar-track { background: var(--bg); }
-        ::-webkit-scrollbar-thumb { background: var(--card); border-radius: 10px; border: 2px solid var(--accent); }
+        /* ซ่อน Scrollbar เพื่อความสวยงามบนจอทีวี */
+        ::-webkit-scrollbar { display: none; }
 
         body { 
             background: var(--bg); color: var(--text); font-family: 'Sarabun', sans-serif; 
-            margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; 
+            margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; 
         }
 
         #header { 
             background: var(--bg); text-align: center; padding: 15px 0; 
             border-bottom: 3px solid var(--accent); z-index: 1000; flex-shrink: 0;
-            position: sticky; top: 0;
         }
 
         #logo { max-height: 90px; width: auto; }
 
-        /* ส่วนแสดงข้อความที่เลื่อนดูได้ */
         #wall-container {
             flex-grow: 1; 
-            overflow-y: auto; /* เปิดให้ Scroll ได้ */
+            overflow-y: scroll; /* ต้องเป็น scroll เพื่อให้คำสั่ง JS ทำงาน */
             padding: 20px;
             display: flex;
-            flex-direction: column; /* เรียงจากบนลงล่างตามปกติ */
-            gap: 20px;
+            flex-direction: column; 
+            gap: 25px;
             scroll-behavior: smooth;
         }
 
@@ -60,7 +56,7 @@
         <img src="logo.png" id="logo" alt="TL Logo">
     </div>
 
-    <div id="wall-container"></div>
+    <div id="wall-container" id="wall"></div>
 
     <script>
         const BOT_TOKEN = '8727039624:AAHt67gPcKlMOPKbmu-WoX9eHK7NRuMa2ZQ'; 
@@ -68,13 +64,44 @@
         
         let lastUpdateId = 0;
         let displayedMessageIds = new Set();
+        const wall = document.getElementById('wall-container');
+
+        // --- ระบบ Auto Scroll ---
+        let scrollSpeed = 1; // ความเร็ว (ยิ่งน้อยยิ่งช้า)
+        let direction = 1;   // 1 คือลง, -1 คือขึ้น
+        let pauseScroll = false;
+
+        function autoScroll() {
+            if (pauseScroll) return;
+
+            // ตรวจสอบว่าข้อความล้นจอจนต้อง Scroll หรือไม่
+            if (wall.scrollHeight > wall.clientHeight) {
+                wall.scrollTop += direction * scrollSpeed;
+
+                // ถ้าถึงจุดล่างสุด
+                if (wall.scrollTop + wall.clientHeight >= wall.scrollHeight - 1) {
+                    pauseScroll = true;
+                    setTimeout(() => { 
+                        // ค่อยๆ เลื่อนกลับไปบนสุดเพื่อเริ่มใหม่
+                        wall.scrollTo({ top: 0, behavior: 'auto' });
+                        pauseScroll = false;
+                    }, 5000); // หยุดรอที่ข้างล่าง 5 วินาที ก่อนเริ่มใหม่
+                }
+            }
+        }
+
+        // รัน Auto Scroll ทุกๆ 50 มิลลิวินาที
+        setInterval(autoScroll, 50);
+
+        // หยุด Scroll ชั่วคราวถ้ามีคนเอาเมาส์ไปชี้ (หรือสัมผัสจอ)
+        wall.addEventListener('mouseenter', () => pauseScroll = true);
+        wall.addEventListener('mouseleave', () => pauseScroll = false);
 
         async function fetchTelegram() {
             try {
                 const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${lastUpdateId + 1}&timeout=30`);
                 const data = await response.json();
                 if (data.ok && data.result.length > 0) {
-                    // เรียงจากเก่าไปใหม่เพื่อให้ข้อความใหม่ไปอยู่บนสุด
                     for (let update of data.result) {
                         lastUpdateId = update.update_id;
                         if (update.message && update.message.chat.id == TARGET_CHAT_ID) {
@@ -82,7 +109,7 @@
                             if (!displayedMessageIds.has(msgId)) {
                                 displayedMessageIds.add(msgId);
                                 processMessage(update.message);
-                                if (displayedMessageIds.size > 200) { // เพิ่มการจำ ID เป็น 200
+                                if (displayedMessageIds.size > 100) {
                                     const firstItem = displayedMessageIds.values().next().value;
                                     displayedMessageIds.delete(firstItem);
                                 }
@@ -90,14 +117,12 @@
                         }
                     }
                 }
-            } catch (e) { console.error("Error fetching:", e); }
+            } catch (e) { console.error("Error:", e); }
         }
 
         async function processMessage(msg) {
-            const wall = document.getElementById('wall-container');
             const card = document.createElement('div');
             card.className = 'card';
-            
             let content = `<div class="user">@${msg.from.first_name || 'User'}</div>`;
             
             if (msg.location) {
@@ -117,14 +142,10 @@
             }
 
             card.innerHTML = content;
-            
-            // ใช้ prepend เพื่อให้ข้อความใหม่ล่าสุดอยู่ "บนสุด" เสมอ
-            wall.prepend(card);
+            wall.prepend(card); // ข้อความใหม่สุดอยู่บนสุด
 
-            // เมื่อมีข้อความใหม่เข้ามา ให้หน้าจอเลื่อนไปบนสุดอัตโนมัติ (ถ้าไม่ได้กำลังเลื่อนดูของเก่าอยู่)
-            if (wall.scrollTop < 100) {
-                wall.scrollTo({ top: 0, behavior: 'smooth' });
-            }
+            // เมื่อมีข้อความใหม่ ให้เด้งกลับไปดูด้านบนสุดทันที
+            wall.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         fetchTelegram(); 
@@ -132,6 +153,3 @@
     </script>
 </body>
 </html>
-
-
-

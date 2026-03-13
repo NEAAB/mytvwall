@@ -74,7 +74,7 @@
         setInterval(autoScroll, 50);
 
         // ฟังก์ชันดึงข้อมูล (ดึงทั้งประวัติและข้อความใหม่)
-        async function fetchTelegram(isInitial = false) {
+        async function fetchTelegram(isInitial = true) {
             try {
                 // ถ้าเป็นครั้งแรกที่เปิด (Initial) ให้ดึงย้อนหลัง 10 ข้อความล่าสุดด้วย offset = -10
                 const offsetParam = isInitial ? -10 : lastUpdateId + 1;
@@ -138,3 +138,4 @@
     </script>
 </body>
 </html>
+

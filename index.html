@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>TL ENGINRRING</title>
+    <title>TL Live Chat Wall</title>
     <style>
         :root { --bg: #0f172a; --card: #1e293b; --accent: #ff6600; --text: #f8fafc; }
         body { 
@@ -10,29 +10,39 @@
             margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; 
         }
         #header { 
-            background: var(--bg); text-align: center; padding: 20px 0; 
+            background: var(--bg); text-align: center; padding: 15px 0; 
             border-bottom: 3px solid var(--accent); z-index: 100; flex-shrink: 0; 
         }
-        #logo { max-height: 100px; width: auto; }
+        #logo { max-height: 90px; width: auto; }
         #wall-container {
             flex-grow: 1; overflow-y: hidden; padding: 20px;
             display: flex; flex-direction: column-reverse; gap: 20px;
         }
         .card { 
             background: var(--card); padding: 25px; border-radius: 20px; 
-            border-left: 10px solid var(--accent); box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border-left: 12px solid var(--accent); box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             animation: slideIn 0.5s ease-out; flex-shrink: 0;
         }
         .user { color: var(--accent); font-size: 1.8rem; font-weight: bold; margin-bottom: 10px; }
-        .text { font-size: 2.2rem; line-height: 1.3; }
-        .media { width: 100%; max-height: 300px; object-fit: contain; border-radius: 10px; margin-top: 10px; }
+        .text { font-size: 2.2rem; line-height: 1.3; margin-bottom: 10px; }
+        
+        /* ปรับส่วนรูปภาพให้ใหญ่ขึ้น */
+        .media { 
+            width: 100%; 
+            max-height: 500px; /* เพิ่มความสูงสูงสุดจาก 300px เป็น 500px */
+            object-fit: contain; 
+            border-radius: 12px; 
+            margin-top: 15px;
+            background: #000; /* ใส่พื้นหลังดำให้รูปดูเด่นขึ้น */
+        }
+        
         @keyframes slideIn { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
     
     <div id="header">
-        <img src="logo.png" id="logo" alt="logo">
+        <img src="logo.png" id="logo" alt="TL Logo">
     </div>
 
     <div id="wall-container"></div>
@@ -42,7 +52,7 @@
         const TARGET_CHAT_ID = '-5038324827'; 
         
         let lastUpdateId = 0;
-        let displayedMessageIds = new Set(); // ตัวเก็บ ID ข้อความที่แสดงไปแล้ว
+        let displayedMessageIds = new Set();
 
         async function fetchTelegram() {
             try {
@@ -51,17 +61,11 @@
                 if (data.ok && data.result.length > 0) {
                     for (let update of data.result) {
                         lastUpdateId = update.update_id;
-                        
-                        // ตรวจสอบว่ามีข้อความ และมาจากกลุ่มที่ถูกต้อง
                         if (update.message && update.message.chat.id == TARGET_CHAT_ID) {
                             const msgId = update.message.message_id;
-                            
-                            // --- จุดสำคัญ: ตรวจสอบว่า ID นี้เคยแสดงหรือยัง ---
                             if (!displayedMessageIds.has(msgId)) {
                                 displayedMessageIds.add(msgId);
                                 processMessage(update.message);
-                                
-                                // ป้องกัน Memory เต็ม (เก็บไว้แค่ 100 ID ล่าสุดก็พอ)
                                 if (displayedMessageIds.size > 100) {
                                     const firstItem = displayedMessageIds.values().next().value;
                                     displayedMessageIds.delete(firstItem);
@@ -81,10 +85,11 @@
             let content = `<div class="user">@${msg.from.first_name || 'User'}</div>`;
             
             if (msg.location) {
-                const mapUrl = `https://static-maps.yandex.ru/1.x/?lang=en_US&ll=${msg.location.longitude},${msg.location.latitude}&z=16&l=map&size=600,300&pt=${msg.location.longitude},${msg.location.latitude},pm2rdm`;
+                const mapUrl = `https://static-maps.yandex.ru/1.x/?lang=en_US&ll=${msg.location.longitude},${msg.location.latitude}&z=16&l=map&size=600,450&pt=${msg.location.longitude},${msg.location.latitude},pm2rdm`;
                 content += `<div class="text">📍 แชร์ตำแหน่งที่ตั้ง</div><img src="${mapUrl}" class="media">`;
             } 
             else if (msg.photo) {
+                // เลือกรูปที่ใหญ่ที่สุดจาก Array
                 const fileId = msg.photo[msg.photo.length - 1].file_id;
                 const fileRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getFile?file_id=${fileId}`);
                 const fileData = await fileRes.json();
@@ -99,13 +104,14 @@
             card.innerHTML = content;
             wall.prepend(card);
 
-            // จำกัดข้อความบนจอ (4 ข้อความ)
-            if (wall.children.length > 4) wall.removeChild(wall.lastChild);
+            // ปรับจำนวนข้อความบนจอเหลือ 3 ข้อความ เพื่อให้รูปมีที่วางกว้างขึ้น
+            if (wall.children.length > 3) wall.removeChild(wall.lastChild);
         }
 
-        // เริ่มดึงข้อมูลทันทีและทำซ้ำทุก 3 วินาที
         fetchTelegram(); 
         setInterval(fetchTelegram, 3000);
     </script>
 </body>
 </html>
+</html>
+

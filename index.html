@@ -12,7 +12,6 @@
             margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; 
         }
 
-        /* ส่วนหัวสีขาว */
         #header { 
             background: #ffffff; 
             text-align: center; 
@@ -30,9 +29,9 @@
             overflow-y: scroll; 
             padding: 20px 40px;
             display: flex; 
-            flex-direction: column; /* เรียงจากบนลงล่าง */
+            flex-direction: column; 
             gap: 30px;
-            scroll-behavior: smooth;
+            scroll-behavior: auto; /* ปิด smooth ของบราวเซอร์เพื่อใช้ JS คุมเองให้นุ่มกว่า */
         }
 
         .card { 
@@ -54,7 +53,7 @@
 <body>
     
     <div id="header">
-        <img src="logo.png" id="logo" alt="logo">
+        <img src="1200%20(1).png" id="logo" alt="TL Logo">
     </div>
 
     <div id="wall-container"></div>
@@ -67,9 +66,65 @@
         let displayedMessageIds = new Set();
         const wall = document.getElementById('wall-container');
 
+        // --- ระบบ Ultra Smooth Scroll (แบบเรียงลงล่าง) ---
+        let currentScroll = 0;
+        let scrollSpeed = 0.6; 
+        let isPaused = false;
+
+        function smoothScroll() {
+            // ถ้าไม่ได้หยุดพัก และเนื้อหายาวเกินหน้าจอ
+            if (!isPaused && wall.scrollHeight > wall.clientHeight) {
+                currentScroll += scrollSpeed;
+                wall.scrollTop = currentScroll;
+
+                // เมื่อเลื่อนลงมาจนถึงข้อความล่าสุด (ล่างสุด)
+                if (currentScroll + wall.clientHeight >= wall.scrollHeight) {
+                    isPaused = true;
+                    // หยุดรอที่ข้อความล่าสุด 5 วินาที ก่อนจะเด้งกลับไปบนสุด
+                    setTimeout(() => {
+                        resetToTopSmoothly();
+                    }, 5000);
+                }
+            }
+            requestAnimationFrame(smoothScroll);
+        }
+
+        function resetToTopSmoothly() {
+            const start = wall.scrollTop;
+            const duration = 2000; // ใช้เวลา 2 วินาทีในการเลื่อนกลับไปบนสุด
+            let startTime = null;
+
+            function animation(currentTime) {
+                if (startTime === null) startTime = currentTime;
+                const timeElapsed = currentTime - startTime;
+                const run = easeInOutQuad(timeElapsed, start, -start, duration);
+                wall.scrollTop = run;
+                currentScroll = run;
+                if (timeElapsed < duration) {
+                    requestAnimationFrame(animation);
+                } else {
+                    isPaused = false; // เริ่มเลื่อนลงใหม่
+                }
+            }
+
+            function easeInOutQuad(t, b, c, d) {
+                t /= d/2;
+                if (t < 1) return c/2*t*t + b;
+                t--;
+                return -c/2 * (t*(t-2) - 1) + b;
+            }
+            requestAnimationFrame(animation);
+        }
+
+        // เริ่มต้นระบบ Scroll
+        requestAnimationFrame(smoothScroll);
+
+        // หยุดเลื่อนเมื่อเอาเมาส์ชี้
+        wall.addEventListener('mouseenter', () => isPaused = true);
+        wall.addEventListener('mouseleave', () => isPaused = false);
+
         async function fetchTelegram(isInitial = false) {
             try {
-                // ดึง 10 ข้อความล่าสุดมาแสดงตอนเปิดใหม่
                 const offsetParam = isInitial ? -10 : lastUpdateId + 1;
                 const response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${offsetParam}&timeout=30`);
                 const data = await response.json();
@@ -97,7 +152,6 @@
             if (msg.location) {
                 const lat = msg.location.latitude;
                 const lon = msg.location.longitude;
-                // แผนที่ Yandex ที่เสถียรที่สุดแบบไม่ต้องใช้ Key
                 const mapUrl = `https://static-maps.yandex.ru/1.x/?lang=en_US&ll=${lon},${lat}&z=16&l=map&size=600,400&pt=${lon},${lat},pm2rdm`;
                 content += `<div class="text">📍 แชร์ตำแหน่งที่ตั้ง</div><img src="${mapUrl}" class="media">`;
             } else if (msg.photo) {
@@ -112,15 +166,34 @@
             }
             
             card.innerHTML = content;
+            wall.appendChild(card); // ต่อท้ายล่างสุด
             
-            // ใช้ appendChild เพื่อให้ข้อความใหม่ต่อท้ายด้านล่าง
-            wall.appendChild(card);
+            // เมื่อมีข้อความใหม่ ให้รีบเลื่อนลงไปดูที่ล่างสุดทันทีอย่างนุ่มนวล
+            isPaused = true;
+            const start = wall.scrollTop;
+            const target = wall.scrollHeight;
+            const duration = 1000;
+            let startTime = null;
+
+            function scrollToNew(currentTime) {
+                if (startTime === null) startTime = currentTime;
+                const timeElapsed = currentTime - startTime;
+                const run = easeInOutQuad(timeElapsed, start, target - start - wall.clientHeight, duration);
+                wall.scrollTop = run;
+                currentScroll = run;
+                if (timeElapsed < duration) {
+                    requestAnimationFrame(scrollToNew);
+                } else {
+                    isPaused = false;
+                }
+            }
             
-            // สั่งให้หน้าจอเลื่อนลงไปล่างสุดเสมอเพื่อให้เห็นข้อความล่าสุด
-            wall.scrollTo({ top: wall.scrollHeight, behavior: 'smooth' });
+            function easeInOutQuad(t, b, c, d) {
+                t /= d/2; if (t < 1) return c/2*t*t + b; t--; return -c/2 * (t*(t-2) - 1) + b;
+            }
+            requestAnimationFrame(scrollToNew);
         }
 
-        // เริ่มต้นการทำงาน
         fetchTelegram(true); 
         setInterval(() => fetchTelegram(false), 3000);
     </script>

@@ -14,13 +14,13 @@
 
         /* --- ปรับส่วนหัวเป็นสีขาว --- */
         #header { 
-            background: #ffffff; /* เปลี่ยนเป็นสีขาว */
+            background: #ffffff; 
             text-align: center; 
             padding: 10px 0; 
-            border-bottom: 5px solid #ff6600; /* เส้นคั่นสีเทาอ่อนให้ดูแพง */
+            border-bottom: 5px solid #ff6600; 
             z-index: 1000; 
             flex-shrink: 0;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2); /* เงาใต้ส่วนหัว */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
         }
 
         #logo { max-height: 90px; width: auto; }
@@ -40,6 +40,18 @@
         .user { color: var(--accent); font-size: 1.8rem; font-weight: bold; margin-bottom: 12px; }
         .text { font-size: 2.4rem; line-height: 1.4; margin-bottom: 10px; }
         .media { width: 100%; max-height: 550px; object-fit: contain; border-radius: 15px; margin-top: 20px; background: #000; }
+
+        /* สไตล์สำหรับการ์ด Location ใหม่ */
+        .location-box {
+            background: #2d3748; padding: 25px; border-radius: 20px; 
+            margin-top: 15px; border: 1px solid #4a5568; text-align: center;
+        }
+        .btn-map {
+            display: inline-block; background: #ff6600; color: white; padding: 12px 30px; 
+            border-radius: 50px; text-decoration: none; font-size: 1.6rem; font-weight: bold;
+            margin-top: 15px; transition: transform 0.2s;
+        }
+        .btn-map:active { transform: scale(0.95); }
 
         @keyframes fadeIn { 
             from { opacity: 0; transform: scale(0.95) translateY(20px); } 
@@ -125,9 +137,24 @@
             const card = document.createElement('div');
             card.className = 'card';
             let content = `<div class="user">@${msg.from.first_name || 'User'}</div>`;
+            
             if (msg.location) {
-                const mapUrl = `https://static-maps.yandex.ru/1.x/?lang=en_US&ll=${msg.location.longitude},${msg.location.latitude}&z=16&l=map&size=600,450&pt=${msg.location.longitude},${msg.location.latitude},pm2rdm`;
-                content += `<div class="text">📍 แชร์ตำแหน่งที่ตั้ง</div><img src="${mapUrl}" class="media">`;
+                const lat = msg.location.latitude;
+                const lon = msg.location.longitude;
+                const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
+                
+                content += `
+                    <div class="text">📍 แชร์ตำแหน่งที่ตั้ง</div>
+                    <div class="location-box">
+                        <div style="font-size: 1.6rem; color: #ff6600; font-weight: bold; margin-bottom: 5px;">LIVE LOCATION</div>
+                        <div style="font-size: 1.2rem; color: #cbd5e0;">
+                            พิกัด: ${lat.toFixed(6)}, ${lon.toFixed(6)}
+                        </div>
+                        <a href="${googleMapsUrl}" target="_blank" class="btn-map">
+                            เปิดใน GOOGLE MAPS
+                        </a>
+                    </div>
+                `;
             } else if (msg.photo) {
                 const fileId = msg.photo[msg.photo.length - 1].file_id;
                 const fileRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getFile?file_id=${fileId}`);
@@ -138,9 +165,14 @@
             } else if (msg.text) {
                 content += `<div class="text">${msg.text}</div>`;
             }
+            
             card.innerHTML = content;
             wall.prepend(card);
-            if (currentScroll > 100) { isPaused = true; resetToTopSmoothly(); }
+            
+            if (currentScroll > 100) { 
+                isPaused = true; 
+                resetToTopSmoothly(); 
+            }
         }
 
         fetchTelegram(true); 
@@ -148,5 +180,3 @@
     </script>
 </body>
 </html>
-
-

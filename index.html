@@ -31,7 +31,7 @@
             display: flex; 
             flex-direction: column; 
             gap: 30px;
-            scroll-behavior: auto; /* ปิด smooth ของบราวเซอร์เพื่อใช้ JS คุมเองให้นุ่มกว่า */
+            scroll-behavior: auto;
         }
 
         .card { 
@@ -40,7 +40,19 @@
             animation: slideUp 0.6s ease-out; flex-shrink: 0;
         }
 
-        .user { color: var(--accent); font-size: 1.8rem; font-weight: bold; margin-bottom: 12px; }
+        /* ปรับส่วนหัวของการ์ดให้แสดงชื่อและเวลา */
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .user { color: var(--accent); font-size: 1.8rem; font-weight: bold; }
+        
+        /* สไตล์ของเวลา */
+        .time { color: #94a3b8; font-size: 1.2rem; font-weight: normal; }
+
         .text { font-size: 2.4rem; line-height: 1.4; margin-bottom: 10px; }
         .media { width: 100%; max-height: 550px; object-fit: contain; border-radius: 15px; margin-top: 20px; background: #000; }
 
@@ -53,7 +65,7 @@
 <body>
     
     <div id="header">
-        <img src="logo.png" id="logo" alt="logo">
+        <img src="1200%20(1).png" id="logo" alt="logo">
     </div>
 
     <div id="wall-container"></div>
@@ -66,24 +78,17 @@
         let displayedMessageIds = new Set();
         const wall = document.getElementById('wall-container');
 
-        // --- ระบบ Ultra Smooth Scroll (แบบเรียงลงล่าง) ---
         let currentScroll = 0;
         let scrollSpeed = 0.5; 
         let isPaused = false;
 
         function smoothScroll() {
-            // ถ้าไม่ได้หยุดพัก และเนื้อหายาวเกินหน้าจอ
             if (!isPaused && wall.scrollHeight > wall.clientHeight) {
                 currentScroll += scrollSpeed;
                 wall.scrollTop = currentScroll;
-
-                // เมื่อเลื่อนลงมาจนถึงข้อความล่าสุด (ล่างสุด)
                 if (currentScroll + wall.clientHeight >= wall.scrollHeight) {
                     isPaused = true;
-                    // หยุดรอที่ข้อความล่าสุด 5 วินาที ก่อนจะเด้งกลับไปบนสุด
-                    setTimeout(() => {
-                        resetToTopSmoothly();
-                    }, 5000);
+                    setTimeout(() => { resetToTopSmoothly(); }, 5000);
                 }
             }
             requestAnimationFrame(smoothScroll);
@@ -91,7 +96,7 @@
 
         function resetToTopSmoothly() {
             const start = wall.scrollTop;
-            const duration = 3000; // ใช้เวลา 2 วินาทีในการเลื่อนกลับไปบนสุด
+            const duration = 3000; 
             let startTime = null;
 
             function animation(currentTime) {
@@ -103,7 +108,7 @@
                 if (timeElapsed < duration) {
                     requestAnimationFrame(animation);
                 } else {
-                    isPaused = false; // เริ่มเลื่อนลงใหม่
+                    isPaused = false;
                 }
             }
 
@@ -116,10 +121,8 @@
             requestAnimationFrame(animation);
         }
 
-        // เริ่มต้นระบบ Scroll
         requestAnimationFrame(smoothScroll);
 
-        // หยุดเลื่อนเมื่อเอาเมาส์ชี้
         wall.addEventListener('mouseenter', () => isPaused = true);
         wall.addEventListener('mouseleave', () => isPaused = false);
 
@@ -131,7 +134,6 @@
                 
                 if (data.ok && data.result.length > 0) {
                     const filteredMessages = data.result.filter(update => update.message && update.message.chat.id == TARGET_CHAT_ID);
-                    
                     for (let update of filteredMessages) {
                         lastUpdateId = update.update_id;
                         const msgId = update.message.message_id;
@@ -147,7 +149,18 @@
         async function processMessage(msg) {
             const card = document.createElement('div');
             card.className = 'card';
-            let content = `<div class="user">${msg.from.first_name || 'User'}</div>`;
+            
+            // --- จัดการเรื่องเวลา ---
+            const messageDate = new Date(msg.date * 1000);
+            const hours = messageDate.getHours().toString().padStart(2, '0');
+            const minutes = messageDate.getMinutes().toString().padStart(2, '0');
+            const timeStr = `${hours}:${minutes}`;
+
+            let content = `
+                <div class="card-header">
+                    <div class="user">${msg.from.first_name || 'User'}</div>
+                    <div class="time">${timeStr}</div>
+                </div>`;
             
             if (msg.location) {
                 const lat = msg.location.latitude;
@@ -166,9 +179,9 @@
             }
             
             card.innerHTML = content;
-            wall.appendChild(card); // ต่อท้ายล่างสุด
+            wall.appendChild(card); 
             
-            // เมื่อมีข้อความใหม่ ให้รีบเลื่อนลงไปดูที่ล่างสุดทันทีอย่างนุ่มนวล
+            // Auto Scroll ลงไปที่ข้อความใหม่
             isPaused = true;
             const start = wall.scrollTop;
             const target = wall.scrollHeight;

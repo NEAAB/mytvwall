@@ -134,7 +134,7 @@
                 const mapUrl = `https://static-maps.yandex.ru/1.x/?lang=en_US&ll=${lon},${lat}&z=16&l=map&size=600,400&pt=${lon},${lat},pm2rdm`;
                 
                 content += `
-                    <div class="text">📍 แชร์ตำแหน่งที่ตั้ง</div>
+                    <div class="text">📍Location</div>
                     <img src="${mapUrl}" class="media" onerror="this.src='https://via.placeholder.com/600x400/1e293b/ff6600?text=Location+Shared'">
                 `;
             } else if (msg.photo) {

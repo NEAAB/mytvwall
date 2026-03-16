@@ -12,7 +12,7 @@
             margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; 
         }
 
-        /* --- ปรับส่วนหัวเป็นสีขาว --- */
+        /* --- ส่วนหัวสีขาว --- */
         #header { 
             background: #ffffff; 
             text-align: center; 
@@ -40,18 +40,6 @@
         .user { color: var(--accent); font-size: 1.8rem; font-weight: bold; margin-bottom: 12px; }
         .text { font-size: 2.4rem; line-height: 1.4; margin-bottom: 10px; }
         .media { width: 100%; max-height: 550px; object-fit: contain; border-radius: 15px; margin-top: 20px; background: #000; }
-
-        /* สไตล์สำหรับการ์ด Location ใหม่ */
-        .location-box {
-            background: #2d3748; padding: 25px; border-radius: 20px; 
-            margin-top: 15px; border: 1px solid #4a5568; text-align: center;
-        }
-        .btn-map {
-            display: inline-block; background: #ff6600; color: white; padding: 12px 30px; 
-            border-radius: 50px; text-decoration: none; font-size: 1.6rem; font-weight: bold;
-            margin-top: 15px; transition: transform 0.2s;
-        }
-        .btn-map:active { transform: scale(0.95); }
 
         @keyframes fadeIn { 
             from { opacity: 0; transform: scale(0.95) translateY(20px); } 
@@ -141,19 +129,14 @@
             if (msg.location) {
                 const lat = msg.location.latitude;
                 const lon = msg.location.longitude;
-                const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
+                
+                // ใช้ OpenStreetMap Static Map (ฟรี 100% ไม่ต้องใช้ API Key)
+                // พารามิเตอร์: center (ละติจูด,ลองจิจูด), zoom (16), size (800x600), markers (ตำแหน่งปักหมุด)
+                const mapUrl = `https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lon}&zoom=16&size=800x600&maptype=mapnik&markers=${lat},${lon},ol-marker`;
                 
                 content += `
                     <div class="text">📍 แชร์ตำแหน่งที่ตั้ง</div>
-                    <div class="location-box">
-                        <div style="font-size: 1.6rem; color: #ff6600; font-weight: bold; margin-bottom: 5px;">LIVE LOCATION</div>
-                        <div style="font-size: 1.2rem; color: #cbd5e0;">
-                            พิกัด: ${lat.toFixed(6)}, ${lon.toFixed(6)}
-                        </div>
-                        <a href="${googleMapsUrl}" target="_blank" class="btn-map">
-                            เปิดใน GOOGLE MAPS
-                        </a>
-                    </div>
+                    <img src="${mapUrl}" class="media" alt="Location Map">
                 `;
             } else if (msg.photo) {
                 const fileId = msg.photo[msg.photo.length - 1].file_id;

@@ -12,7 +12,6 @@
             margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; 
         }
 
-        /* --- ส่วนหัวสีขาว --- */
         #header { 
             background: #ffffff; 
             text-align: center; 
@@ -50,7 +49,7 @@
 <body>
     
     <div id="header">
-        <img src="logo.png" id="logo" alt="TL Logo">
+        <img src="1200 (1).png" id="logo" alt="TL Logo">
     </div>
 
     <div id="wall-container"></div>
@@ -130,13 +129,13 @@
                 const lat = msg.location.latitude;
                 const lon = msg.location.longitude;
                 
-                // ใช้ OpenStreetMap Static Map (ฟรี 100% ไม่ต้องใช้ API Key)
-                // พารามิเตอร์: center (ละติจูด,ลองจิจูด), zoom (16), size (800x600), markers (ตำแหน่งปักหมุด)
-                const mapUrl = `https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lon}&zoom=16&size=800x600&maptype=mapnik&markers=${lat},${lon},ol-marker`;
+                // ใช้ Static Maps จาก Yandex (เวอร์ชันปรับปรุงให้โหลดง่ายขึ้น) 
+                // หรือใช้ภาพแทนโลเคชั่นสวยๆ กรณี Server แผนที่ปลายทางมีปัญหา
+                const mapUrl = `https://static-maps.yandex.ru/1.x/?lang=en_US&ll=${lon},${lat}&z=16&l=map&size=600,400&pt=${lon},${lat},pm2rdm`;
                 
                 content += `
                     <div class="text">📍 แชร์ตำแหน่งที่ตั้ง</div>
-                    <img src="${mapUrl}" class="media" alt="Location Map">
+                    <img src="${mapUrl}" class="media" onerror="this.src='https://via.placeholder.com/600x400/1e293b/ff6600?text=Location+Shared'">
                 `;
             } else if (msg.photo) {
                 const fileId = msg.photo[msg.photo.length - 1].file_id;

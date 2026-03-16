@@ -68,7 +68,7 @@
 
         // --- ระบบ Ultra Smooth Scroll (แบบเรียงลงล่าง) ---
         let currentScroll = 0;
-        let scrollSpeed = 0.6; 
+        let scrollSpeed = 0.5; 
         let isPaused = false;
 
         function smoothScroll() {
@@ -91,7 +91,7 @@
 
         function resetToTopSmoothly() {
             const start = wall.scrollTop;
-            const duration = 2000; // ใช้เวลา 2 วินาทีในการเลื่อนกลับไปบนสุด
+            const duration = 3000; // ใช้เวลา 2 วินาทีในการเลื่อนกลับไปบนสุด
             let startTime = null;
 
             function animation(currentTime) {

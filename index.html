@@ -53,7 +53,7 @@
 <body>
     
     <div id="header">
-        <img src="1200%20(1).png" id="logo" alt="TL Logo">
+        <img src="logo.png" id="logo" alt="logo">
     </div>
 
     <div id="wall-container"></div>
@@ -147,7 +147,7 @@
         async function processMessage(msg) {
             const card = document.createElement('div');
             card.className = 'card';
-            let content = `<div class="user">@${msg.from.first_name || 'User'}</div>`;
+            let content = `<div class="user">${msg.from.first_name || 'User'}</div>`;
             
             if (msg.location) {
                 const lat = msg.location.latitude;

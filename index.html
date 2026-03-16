@@ -123,7 +123,7 @@
         async function processMessage(msg) {
             const card = document.createElement('div');
             card.className = 'card';
-            let content = `<div class="user">@${msg.from.first_name || 'User'}</div>`;
+            let content = `<div class="user">${msg.from.first_name || 'User'}</div>`;
             
             if (msg.location) {
                 const lat = msg.location.latitude;

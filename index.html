@@ -166,7 +166,7 @@
                 const lat = msg.location.latitude;
                 const lon = msg.location.longitude;
                 const mapUrl = `https://static-maps.yandex.ru/1.x/?lang=en_US&ll=${lon},${lat}&z=16&l=map&size=600,400&pt=${lon},${lat},pm2rdm`;
-                content += `<div class="text">📍 แชร์ตำแหน่งที่ตั้ง</div><img src="${mapUrl}" class="media">`;
+                content += `<div class="text">📍 Location</div><img src="${mapUrl}" class="media">`;
             } else if (msg.photo) {
                 const fileId = msg.photo[msg.photo.length - 1].file_id;
                 const fileRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getFile?file_id=${fileId}`);
